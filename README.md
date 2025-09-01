@@ -99,6 +99,34 @@ Environment overrides:
 - API connection string is set to the `db` service. To use a local Postgres instead, change `SUPABASE_DB_CONNECTION` in `docker-compose.yml`.
 - Frontend uses `VITE_API_BASE` (defaults to `http://localhost:5000` in code). If needed, set in `docker-compose.yml` or `frontend/.env`.
 
+## Production Docker Images
+
+Build and run production images:
+
+Backend (ASP.NET Core):
+
+```bash
+docker build -t famlio-api:prod -f backend/Dockerfile .
+docker run -p 8080:8080 \
+  -e ASPNETCORE_URLS=http://0.0.0.0:8080 \
+  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+  -e BACKEND_JWT_SECRET="change-me-very-long-random" \
+  famlio-api:prod
+```
+
+Frontend (Nginx static):
+
+```bash
+docker build -t famlio-web:prod -f frontend/Dockerfile .
+docker run -p 8081:80 famlio-web:prod
+```
+
+Notes:
+
+- The frontend uses SvelteKit static adapter and is served via Nginx with SPA fallback.
+- Ensure API CORS allows your deployed frontend origin.
+- Supply a managed Postgres connection string to the API in production.
+
 ## API Overview (quick)
 
 Base URL defaults to `http://localhost:5000`.
