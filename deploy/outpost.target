@@ -1,0 +1,10 @@
+[Unit]
+Description=Outpost Application Target
+Wants=outpost-api-docker.service outpost-web-docker.service
+After=docker.service
+
+# No [Service] section for targets
+
+[Install]
+WantedBy=multi-user.target
+

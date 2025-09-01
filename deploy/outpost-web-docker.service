@@ -1,0 +1,21 @@
+[Unit]
+Description=Outpost Web (Frontend Docker Container)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/outpost-web-docker.env
+ExecStartPre=-/usr/bin/docker stop outpost-web
+ExecStartPre=-/usr/bin/docker rm outpost-web
+ExecStartPre=-/usr/bin/docker pull ${IMAGE}
+ExecStart=/usr/bin/docker run --name outpost-web \
+  -p ${WEB_PORT}:80 \
+  ${IMAGE}
+ExecStop=/usr/bin/docker stop outpost-web
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

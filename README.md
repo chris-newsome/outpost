@@ -301,6 +301,47 @@ Notes:
 - The unit pulls `${IMAGE}` before starting (ignored if unavailable).
 - It maps `${API_PORT}` on the host to container port 8080.
 - Container environment is read from `/etc/outpost-api.env` via `--env-file`.
+
+## systemd Services (Frontend via Docker) and Target
+
+Run the Nginx-served frontend as a Docker container and optionally orchestrate both services with a target.
+
+1) Build or pull the frontend image
+
+```bash
+docker build -t outpost-web:prod -f frontend/Dockerfile .
+```
+
+2) Prepare environment file
+
+```bash
+sudo cp deploy/outpost-web-docker.env.example /etc/outpost-web-docker.env
+sudo chmod 600 /etc/outpost-web-docker.env
+sudo editor /etc/outpost-web-docker.env   # set IMAGE and WEB_PORT if needed
+```
+
+3) Install and enable the web service
+
+```bash
+sudo cp deploy/outpost-web-docker.service /etc/systemd/system/outpost-web-docker.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-web-docker
+```
+
+4) Optional: Orchestrate both with a target
+
+```bash
+sudo cp deploy/outpost.target /etc/systemd/system/outpost.target
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost.target
+# Now you can start/stop both:
+sudo systemctl stop outpost.target
+```
+
+Notes:
+
+- Units remain independent for troubleshooting: start/stop `outpost-api-docker` or `outpost-web-docker` as needed.
+- The `outpost.target` simply groups them, so `systemctl start outpost.target` starts both.
 - Update the unit file if your deployment paths differ.
 
 ## API Overview (quick)
