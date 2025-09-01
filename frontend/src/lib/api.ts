@@ -18,7 +18,10 @@ export interface QueuedRequest {
   body?: unknown;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000';
+// Allow empty string as a valid base (to use same-origin + Nginx proxy)
+const API_BASE = (import.meta.env.VITE_API_BASE !== undefined
+  ? (import.meta.env.VITE_API_BASE as string)
+  : 'http://localhost:5000');
 
 export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<T> {
   const method = opts.method ?? 'GET';
@@ -29,7 +32,9 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
+  const url = path.startsWith('http')
+    ? path
+    : (API_BASE && API_BASE.length > 0) ? `${API_BASE}${path}` : path;
   const init: RequestInit = {
     method,
     headers,
@@ -61,4 +66,3 @@ async function queueRequest(req: QueuedRequest): Promise<void> {
   const reg = await navigator.serviceWorker.ready;
   reg.active?.postMessage({ type: 'QUEUE_REQUEST', payload: req });
 }
-

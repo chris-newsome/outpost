@@ -127,6 +127,23 @@ Notes:
 - Ensure API CORS allows your deployed frontend origin.
 - Supply a managed Postgres connection string to the API in production.
 
+## docker-compose.prod.yml
+
+Build and run the production stack (Nginx static frontend + API + Postgres):
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+- Frontend (Nginx): http://localhost:8081
+- API: http://localhost:8080 (health at `/health`)
+- DB: localhost:5432 (db `famlio`, user `postgres`, password `postgres`)
+
+Notes:
+
+- The frontend is built with `VITE_API_BASE` set to empty, so it uses same-origin requests and Nginx proxies `/api` and `/hubs` to the `api` service inside the Compose network (see `frontend/nginx.conf`). This avoids CORS.
+- If you choose not to proxy through Nginx, set `VITE_API_BASE` to the API URL at build time and ensure `Cors__AllowedOrigins` on the API matches your frontend origin.
+
 ## API Overview (quick)
 
 Base URL defaults to `http://localhost:5000`.
