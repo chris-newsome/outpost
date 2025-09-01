@@ -5,10 +5,7 @@
     "moduleResolution": "bundler",
     "target": "ES2020",
     "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "$lib/*": ["src/lib/*"]
-    }
+    "types": ["vite/client", "svelte", "@sveltejs/kit"]
   },
   "include": [
     "src/**/*.d.ts",
@@ -16,4 +13,3 @@
     "src/**/*.ts"
   ]
 }
-
