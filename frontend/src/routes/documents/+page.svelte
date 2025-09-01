@@ -2,6 +2,12 @@
   import { documentsStore } from '$lib/stores/documents';
   import { onMount } from 'svelte';
   let file: File | null = null;
+  
+  function onFileChange(e: Event) {
+    const input = e.target as HTMLInputElement | null;
+    const files = input && input.files ? input.files : null;
+    file = files && files.length > 0 ? files[0] : null;
+  }
   onMount(() => documentsStore.load());
 
   async function upload() {
@@ -12,7 +18,7 @@
 <h1>Documents</h1>
 
 <div style="margin:1rem 0">
-  <input type="file" bind:files={file} on:change={(e: any) => file = e?.target?.files?.[0] ?? null} />
+  <input type="file" on:change={onFileChange} />
   <button on:click={upload} disabled={!file}>Upload</button>
   {#if $documentsStore.uploading}<span>Uploading…</span>{/if}
   {#if $documentsStore.error}<span style="color:#be123c">{$documentsStore.error}</span>{/if}
@@ -30,4 +36,3 @@
     {/each}
   </ul>
 {/if}
-
