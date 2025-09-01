@@ -368,28 +368,7 @@ Behavior:
 
 ## Centralized Logs and Alerts
 
-You have a few options to forward logs and trigger alerts.
-
-### Option A: Grafana Loki via Promtail
-
-1) Copy config and env
-
-```bash
-sudo mkdir -p /etc/promtail /var/lib/promtail
-sudo cp deploy/promtail-config.yml /etc/promtail/promtail.yaml
-sudo cp deploy/outpost-promtail-docker.service /etc/systemd/system/outpost-promtail-docker.service
-sudo cp deploy/outpost-promtail.env.example /etc/outpost-promtail.env
-sudo systemctl daemon-reload
-sudo systemctl enable --now outpost-promtail-docker
-```
-
-2) Set the Loki URL inside `/etc/promtail/promtail.yaml` clients[].url
-
-Promtail scrapes:
-- systemd journal (labels unit, host)
-- Docker container logs (`/var/lib/docker/containers/*/*-json.log`)
-
-### Option B: AWS CloudWatch via Fluent Bit
+CloudWatch Logs via Fluent Bit
 
 1) Copy config and env
 
