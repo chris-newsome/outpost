@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: famlio-db
+    environment:
+      POSTGRES_DB: famlio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d famlio"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: famlio-api
+    working_dir: /workspace
+    command: bash -lc "dotnet restore backend/FamilyManagement.API/FamilyManagement.API.csproj && DOTNET_ENVIRONMENT=Development dotnet watch --project backend/FamilyManagement.API/FamilyManagement.API.csproj run"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:5000
+      SUPABASE_DB_CONNECTION: Host=db;Database=famlio;Username=postgres;Password=postgres
+      BACKEND_JWT_SECRET: change-me-very-long-random
+    volumes:
+      - ./:/workspace
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: node:20
+    container_name: famlio-web
+    working_dir: /workspace/frontend
+    command: bash -lc "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      # Frontend defaults to http://localhost:5000 if not set; override if needed
+      VITE_API_BASE: http://localhost:5000
+      # Set these if using Supabase in dev
+      # VITE_SUPABASE_URL: ""
+      # VITE_SUPABASE_ANON_KEY: ""
+    volumes:
+      - ./frontend:/workspace/frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+

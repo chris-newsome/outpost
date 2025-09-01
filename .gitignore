@@ -1,0 +1,43 @@
+# Node / Frontend
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/.vite/
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# SvelteKit adapter artifacts (if any)
+frontend/.vercel/
+frontend/.netlify/
+
+# Backend / .NET
+backend/**/bin/
+backend/**/obj/
+.vs/
+*.user
+*.suo
+*.sln.ide/
+*.sln.docstates
+
+# OS / Editor
+.DS_Store
+.idea/
+*.iml
+
+# Env / Secrets
+.env
+.env.*
+frontend/.env
+backend/.env
+
+# Coverage / Reports
+coverage/
+*.lcov
+
+# Docker
+docker-data/
+

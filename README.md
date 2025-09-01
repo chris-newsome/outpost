@@ -82,6 +82,23 @@ npm run dev
 # App at http://localhost:5173
 ```
 
+## Docker Compose (Dev)
+
+Run Postgres, API (dotnet watch), and Frontend (Vite dev) together:
+
+```bash
+docker compose up --build
+```
+
+- Frontend: http://localhost:5173
+- API: http://localhost:5000 (health at /health)
+- Postgres: localhost:5432 (db: famlio / postgres:postgres)
+
+Environment overrides:
+
+- API connection string is set to the `db` service. To use a local Postgres instead, change `SUPABASE_DB_CONNECTION` in `docker-compose.yml`.
+- Frontend uses `VITE_API_BASE` (defaults to `http://localhost:5000` in code). If needed, set in `docker-compose.yml` or `frontend/.env`.
+
 ## API Overview (quick)
 
 Base URL defaults to `http://localhost:5000`.
@@ -125,4 +142,3 @@ Base URL defaults to `http://localhost:5000`.
 ## License
 
 Proprietary — internal project scaffolding unless stated otherwise.
-
