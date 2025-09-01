@@ -457,6 +457,45 @@ Notes:
 - The health timer logs lines containing `outpost-healthcheck] API unhealthy` and `outpost-healthcheck] Web unhealthy` when checks fail. Metric filters count those events.
 - To scope alarms per host, add `--dimensions Name=Host,Value=$(hostname)` in both the metric transformation (using extraction) and the alarm; omitted here for simplicity.
 
+### Nginx 5xx Rate Alarm (Frontend)
+
+A simple approach that works with default Nginx access logs to stdout captures any access line with a 5xx status.
+
+1) Create a metric filter on the Docker logs group
+
+```bash
+LOG_GROUP_DOCKER="/outpost/docker"
+
+# Matches lines like: "..." 5xx <bytes> "-" "-"
+aws logs put-metric-filter \
+  --log-group-name "$LOG_GROUP_DOCKER" \
+  --filter-name outpost-nginx-5xx \
+  --filter-pattern '\" 5' \
+  --metric-transformations \
+      metricName=Nginx5xx,metricNamespace=Outpost,metricValue=1,defaultValue=0
+```
+
+2) Create an alarm for sustained errors
+
+```bash
+# Alarm if >= 5 five-hundred responses in 5 minutes
+aws cloudwatch put-metric-alarm \
+  --alarm-name Outpost-Nginx-5xx-High \
+  --namespace Outpost \
+  --metric-name Nginx5xx \
+  --statistic Sum \
+  --period 300 \
+  --evaluation-periods 1 \
+  --threshold 5 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --treat-missing-data notBreaching \
+  --alarm-actions "$TOPIC_ARN"
+```
+
+Notes:
+
+- For more precise filters, emit JSON access logs with a `log_format` that includes a `status` field and tailor `--filter-pattern` for JSON: e.g., `--filter-pattern '{ $.status = 5* }'`. This requires adjusting Nginx logging and ensuring Fluent Bit forwards the JSON as-is.
+
 ### Simple Webhook Alerts on Failures
 
 Use systemd `OnFailure` to send a Slack (or generic) webhook when a unit fails.
