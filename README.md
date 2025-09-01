@@ -258,6 +258,49 @@ journalctl -u outpost-api -f
 Notes:
 
 - The service runs as the `outpost` user in `/opt/outpost/api` and reads environment variables from `/etc/outpost-api.env`.
+
+## systemd Service (API via Docker)
+
+Run the API as a Docker container managed by systemd. This is useful when deploying a single container on a VM without Compose.
+
+1) Build or publish the image
+
+```bash
+# Build locally
+docker build -t outpost-api:prod -f backend/Dockerfile .
+# Or pull from your registry (adjust IMAGE in the env file)
+```
+
+2) Prepare environment files
+
+```bash
+sudo cp deploy/outpost-api-docker.env.example /etc/outpost-api-docker.env
+sudo cp deploy/outpost-api.env.example /etc/outpost-api.env
+sudo chmod 600 /etc/outpost-api-docker.env /etc/outpost-api.env
+sudo editor /etc/outpost-api-docker.env   # set IMAGE and API_PORT if needed
+sudo editor /etc/outpost-api.env          # set DB connection, JWT secret, etc.
+```
+
+3) Install and enable the service
+
+```bash
+sudo cp deploy/outpost-api-docker.service /etc/systemd/system/outpost-api-docker.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-api-docker
+```
+
+4) Verify
+
+```bash
+systemctl status outpost-api-docker
+journalctl -u outpost-api-docker -f
+```
+
+Notes:
+
+- The unit pulls `${IMAGE}` before starting (ignored if unavailable).
+- It maps `${API_PORT}` on the host to container port 8080.
+- Container environment is read from `/etc/outpost-api.env` via `--env-file`.
 - Update the unit file if your deployment paths differ.
 
 ## API Overview (quick)
