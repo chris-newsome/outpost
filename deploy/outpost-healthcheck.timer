@@ -1,0 +1,12 @@
+[Unit]
+Description=Outpost Health Check Timer
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=10s
+Unit=outpost-healthcheck.service
+
+[Install]
+WantedBy=timers.target
+

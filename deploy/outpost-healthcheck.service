@@ -1,0 +1,12 @@
+[Unit]
+Description=Outpost Health Check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/outpost-healthcheck.sh
+
+[Install]
+WantedBy=multi-user.target
+

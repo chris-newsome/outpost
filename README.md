@@ -342,6 +342,29 @@ Notes:
 
 - Units remain independent for troubleshooting: start/stop `outpost-api-docker` or `outpost-web-docker` as needed.
 - The `outpost.target` simply groups them, so `systemctl start outpost.target` starts both.
+
+## Health Checks and Auto-Restart
+
+Two layers of resilience are included:
+
+- Dockerfile HEALTHCHECKs for both API and Web containers
+- A systemd timer that curls the endpoints and restarts services if unhealthy
+
+Setup the timer:
+
+```bash
+sudo install -m 0755 deploy/outpost-healthcheck.sh /usr/local/bin/outpost-healthcheck.sh
+sudo cp deploy/outpost-healthcheck.service /etc/systemd/system/outpost-healthcheck.service
+sudo cp deploy/outpost-healthcheck.timer /etc/systemd/system/outpost-healthcheck.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-healthcheck.timer
+```
+
+Behavior:
+
+- Checks API at `http://127.0.0.1:${API_PORT}/health` (defaults 8080) and Web at `http://127.0.0.1:${WEB_PORT}/` (defaults 8081).
+- Reads `${API_PORT}` from `/etc/outpost-api-docker.env` and `${WEB_PORT}` from `/etc/outpost-web-docker.env` if present.
+- Restarts `outpost-api-docker` or `outpost-web-docker` when checks fail.
 - Update the unit file if your deployment paths differ.
 
 ## API Overview (quick)
