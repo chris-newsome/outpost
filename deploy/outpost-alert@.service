@@ -1,0 +1,7 @@
+[Unit]
+Description=Outpost Failure Alert for %i
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/outpost-alert.sh %i failed
+

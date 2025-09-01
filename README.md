@@ -365,6 +365,76 @@ Behavior:
 - Checks API at `http://127.0.0.1:${API_PORT}/health` (defaults 8080) and Web at `http://127.0.0.1:${WEB_PORT}/` (defaults 8081).
 - Reads `${API_PORT}` from `/etc/outpost-api-docker.env` and `${WEB_PORT}` from `/etc/outpost-web-docker.env` if present.
 - Restarts `outpost-api-docker` or `outpost-web-docker` when checks fail.
+
+## Centralized Logs and Alerts
+
+You have a few options to forward logs and trigger alerts.
+
+### Option A: Grafana Loki via Promtail
+
+1) Copy config and env
+
+```bash
+sudo mkdir -p /etc/promtail /var/lib/promtail
+sudo cp deploy/promtail-config.yml /etc/promtail/promtail.yaml
+sudo cp deploy/outpost-promtail-docker.service /etc/systemd/system/outpost-promtail-docker.service
+sudo cp deploy/outpost-promtail.env.example /etc/outpost-promtail.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-promtail-docker
+```
+
+2) Set the Loki URL inside `/etc/promtail/promtail.yaml` clients[].url
+
+Promtail scrapes:
+- systemd journal (labels unit, host)
+- Docker container logs (`/var/lib/docker/containers/*/*-json.log`)
+
+### Option B: AWS CloudWatch via Fluent Bit
+
+1) Copy config and env
+
+```bash
+sudo mkdir -p /etc/fluent-bit
+sudo cp deploy/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
+sudo cp deploy/outpost-fluent-bit-docker.service /etc/systemd/system/outpost-fluent-bit-docker.service
+sudo cp deploy/outpost-fluent-bit.env.example /etc/outpost-fluent-bit.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-fluent-bit-docker
+```
+
+2) IAM and region
+
+- Prefer an instance role with CloudWatch Logs permissions: `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`.
+- Set `AWS_REGION` in `/etc/outpost-fluent-bit.env`.
+
+Fluent Bit forwards:
+- systemd journal units: `outpost-api-docker.service`, `outpost-web-docker.service` → log group `/outpost/systemd`
+- Docker container logs → log group `/outpost/docker`
+
+### Simple Webhook Alerts on Failures
+
+Use systemd `OnFailure` to send a Slack (or generic) webhook when a unit fails.
+
+1) Install the alert script and template unit
+
+```bash
+sudo install -m 0755 deploy/outpost-alert.sh /usr/local/bin/outpost-alert.sh
+sudo cp deploy/outpost-alert@.service /etc/systemd/system/outpost-alert@.service
+echo 'SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ' | sudo tee /etc/outpost-alert.env >/dev/null
+sudo systemctl daemon-reload
+```
+
+2) Add an OnFailure drop-in to the API and Web units
+
+```bash
+sudo systemctl edit outpost-api-docker --full --force
+# Add: OnFailure=outpost-alert@%n.service
+sudo systemctl edit outpost-web-docker --full --force
+# Add: OnFailure=outpost-alert@%n.service
+sudo systemctl daemon-reload
+```
+
+Now if either unit enters a failed state, systemd triggers the alert unit which posts to your webhook.
 - Update the unit file if your deployment paths differ.
 
 ## API Overview (quick)

@@ -1,0 +1,26 @@
+[Unit]
+Description=Promtail (Loki log forwarder) for Outpost
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/outpost-promtail.env
+ExecStartPre=-/usr/bin/docker stop outpost-promtail
+ExecStartPre=-/usr/bin/docker rm outpost-promtail
+ExecStart=/usr/bin/docker run --name outpost-promtail \
+  -v /var/log/journal:/var/log/journal:ro \
+  -v /var/lib/docker/containers:/var/lib/docker/containers:ro \
+  -v /etc/machine-id:/etc/machine-id:ro \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /var/lib/promtail:/var/lib/promtail \
+  -v /etc/promtail:/etc/promtail \
+  -p 9080:9080 \
+  grafana/promtail:2.9.4 \
+  -config.file=/etc/promtail/promtail.yaml
+ExecStop=/usr/bin/docker stop outpost-promtail
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

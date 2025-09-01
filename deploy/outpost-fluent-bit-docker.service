@@ -1,0 +1,25 @@
+[Unit]
+Description=Fluent Bit (CloudWatch Logs) for Outpost
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/outpost-fluent-bit.env
+ExecStartPre=-/usr/bin/docker stop outpost-fluent-bit
+ExecStartPre=-/usr/bin/docker rm outpost-fluent-bit
+ExecStart=/usr/bin/docker run --name outpost-fluent-bit \
+  -v /var/lib/docker/containers:/var/lib/docker/containers:ro \
+  -v /var/log:/var/log \
+  -v /etc/machine-id:/etc/machine-id:ro \
+  -v /var/run/systemd/journal:/var/run/systemd/journal:ro \
+  -v /etc/fluent-bit:/fluent-bit/etc \
+  -e AWS_REGION=${AWS_REGION} \
+  public.ecr.aws/aws-observability/aws-for-fluent-bit:stable \
+  /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
+ExecStop=/usr/bin/docker stop outpost-fluent-bit
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
