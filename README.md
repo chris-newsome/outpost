@@ -157,6 +157,67 @@ docker compose -f docker-compose.prod.yml -f docker-compose.override.yml up --bu
 
 The override creates a `web-dev` service that bind-mounts `frontend/` and sets `VITE_API_BASE=http://localhost:8080` so the browser talks to the API directly. The static Nginx `web` service is disabled by default via profiles in the override.
 
+## Single-Domain Nginx (Outside Docker)
+
+Use this when deploying on a single host (e.g., a VM) where the API runs locally and Nginx serves the static frontend and reverse-proxies API requests.
+
+1) Build the frontend
+
+```bash
+cd frontend
+npm ci
+npm run build
+sudo mkdir -p /var/www/famlio
+sudo rsync -a --delete build/ /var/www/famlio/
+```
+
+2) Run the API on localhost:8080
+
+- Option A: Use the production Docker image
+
+```bash
+docker build -t famlio-api:prod -f backend/Dockerfile .
+docker run -d --name famlio-api \
+  -p 8080:8080 \
+  -e ASPNETCORE_URLS=http://0.0.0.0:8080 \
+  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+  -e BACKEND_JWT_SECRET="change-me-very-long-random" \
+  famlio-api:prod
+```
+
+- Option B: Run the published binary directly (ensure .NET runtime installed)
+
+```bash
+dotnet publish backend/FamilyManagement.API/FamilyManagement.API.csproj -c Release -o out
+ASPNETCORE_URLS=http://0.0.0.0:8080 \
+SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+BACKEND_JWT_SECRET="change-me-very-long-random" \
+dotnet out/FamilyManagement.API.dll
+```
+
+3) Install Nginx site
+
+```bash
+sudo cp deploy/nginx.single-domain.conf /etc/nginx/sites-available/famlio.conf
+sudo sed -i "s/example.com/your-domain.com/g" /etc/nginx/sites-available/famlio.conf
+sudo nginx -t
+sudo ln -sf /etc/nginx/sites-available/famlio.conf /etc/nginx/sites-enabled/famlio.conf
+sudo systemctl reload nginx
+```
+
+4) Enable HTTPS (optional but recommended)
+
+```bash
+sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+Notes:
+
+- The Nginx config proxies `/api/*` and `/hubs/*` to the API at `http://127.0.0.1:8080` and serves the static site from `/var/www/famlio`.
+- `client_max_body_size 20m` matches the backend documents upload limit.
+- Since the app is served from a single domain, CORS is not required.
+
 ## API Overview (quick)
 
 Base URL defaults to `http://localhost:5000`.
