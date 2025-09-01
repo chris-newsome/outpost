@@ -1,0 +1,30 @@
+version: "3.9"
+
+# Local tweaks override for hot reload of the frontend while using the prod API.
+# Use with the prod stack:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.override.yml up --build
+
+services:
+  # Disable the Nginx static frontend by default when using this override.
+  web:
+    profiles: ["prod"]
+
+  # Hot-reload frontend (SvelteKit dev server) binding local files.
+  web-dev:
+    image: node:20
+    container_name: famlio-web-dev
+    working_dir: /workspace/frontend
+    command: bash -lc "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      # Point the browser to the host-mapped API port
+      VITE_API_BASE: http://localhost:8080
+      # Optionally set Supabase if required for local testing
+      # VITE_SUPABASE_URL: ""
+      # VITE_SUPABASE_ANON_KEY: ""
+    volumes:
+      - ./frontend:/workspace/frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+

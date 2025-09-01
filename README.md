@@ -144,6 +144,19 @@ Notes:
 - The frontend is built with `VITE_API_BASE` set to empty, so it uses same-origin requests and Nginx proxies `/api` and `/hubs` to the `api` service inside the Compose network (see `frontend/nginx.conf`). This avoids CORS.
 - If you choose not to proxy through Nginx, set `VITE_API_BASE` to the API URL at build time and ensure `Cors__AllowedOrigins` on the API matches your frontend origin.
 
+### Local Hot Reload Override
+
+Use the override to run the frontend in hot-reload mode against the prod API:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.override.yml up --build
+```
+
+- Frontend (dev server): http://localhost:5173
+- API (prod container): http://localhost:8080
+
+The override creates a `web-dev` service that bind-mounts `frontend/` and sets `VITE_API_BASE=http://localhost:8080` so the browser talks to the API directly. The static Nginx `web` service is disabled by default via profiles in the override.
+
 ## API Overview (quick)
 
 Base URL defaults to `http://localhost:5000`.
