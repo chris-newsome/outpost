@@ -13,6 +13,7 @@ This ships basic modules for Tasks, Bills, Documents (via Supabase Storage), and
 - `backend/` — ASP.NET Core API (`FamilyManagement.API`)
 - `frontend/` — SvelteKit web app
 - `database/` — SQL migrations and Supabase notes
+ - AI Assistant: see `api/assistant/*` endpoints and `frontend/src/routes/assistant`
 
 ## Prerequisites
 
@@ -50,6 +51,10 @@ Backend (ASP.NET Core):
   - `SUPABASE_JWT_ISSUER`
   - `SUPABASE_JWT_AUDIENCE`
 - Optional CORS origins in config (`Cors:AllowedOrigins`) if not using defaults
+ - AI Assistant:
+   - `OPENAI_API_KEY` (required for chat + embeddings)
+   - Optional: `OPENAI_CHAT_MODEL` (default `gpt-4o-mini`), `OPENAI_EMBEDDING_MODEL` (default `text-embedding-3-small`)
+   - Assistant tuning: `Assistant:MaxToolCallsPerTurn`, `Assistant:TopK`, `Assistant:Temperature`
 
 Frontend (SvelteKit): create `frontend/.env`
 
@@ -549,6 +554,27 @@ Base URL defaults to `http://localhost:5000`.
   - `POST /api/finance/exchange-token` — `{ familyId, provider, publicToken }`
   - `POST /api/finance/webhook/{provider}` — public webhook receiver
 - Realtime: SignalR hub at `/hubs/notifications`
+ - Assistant (requires auth unless noted):
+   - `POST /api/assistant/chat` — body `{ sessionId?, message }` — Server-Sent Events stream of tokens
+   - `POST /api/assistant/index` — admin: rebuild embeddings from tasks/bills/docs
+   - `POST /api/assistant/webhook/{plaid|finicity}` — finance webhooks (stubbed)
+
+### Assistant / RAG Schema
+
+- Run `database/ai_assistant.sql` (or `backend/FamilyManagement.API/Infrastructure/Vector/Migrations/ai_tables.sql`) after `database/migrations.sql`.
+- Ensure `create extension if not exists vector;` is enabled (Supabase supports this).
+
+### Frontend Assistant UI
+
+- Route `/assistant` provides a minimal streaming chat UI with collapsed tool traces and citations.
+- Toggle “Use my data” gates the assistant calls; wire to a family consent flag in your auth/profile store.
+
+### Security & Privacy
+
+- Add a family-level consent flag for AI features; gate `/api/assistant/*` on consent in production.
+- Scope all tool calls and queries by `family_id`; RLS is provided in `database/migrations.sql`, API enforcement remains mandatory.
+- PII minimization: redact secrets from prompts; do not log provider tokens.
+- Rate-limit `/api/assistant/chat` and consider moderation filters upstream of model calls.
 
 ## Notes & Caveats
 

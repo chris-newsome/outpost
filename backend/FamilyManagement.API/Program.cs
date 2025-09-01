@@ -5,6 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using FamilyManagement.API.Data;
 using FamilyManagement.API.Services;
+using FamilyManagement.API.Application.Assistant;
+using FamilyManagement.API.Application.Assistant.Retrieval;
+using FamilyManagement.API.Application.Assistant.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +98,48 @@ builder.Services.AddScoped<IFinanceService, FinanceService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
+
+// Assistant config
+var openAiOptions = new OpenAIOptions
+{
+    ApiKey = configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY"),
+    ChatModel = configuration["OpenAI:ChatModel"] ?? (Environment.GetEnvironmentVariable("OPENAI_CHAT_MODEL") ?? "gpt-4o-mini"),
+    EmbeddingModel = configuration["OpenAI:EmbeddingModel"] ?? (Environment.GetEnvironmentVariable("OPENAI_EMBEDDING_MODEL") ?? "text-embedding-3-small")
+};
+var assistantOptions = new AssistantOptions
+{
+    MaxToolCallsPerTurn = int.TryParse(configuration["Assistant:MaxToolCallsPerTurn"], out var m) ? m : 2,
+    TopK = int.TryParse(configuration["Assistant:TopK"], out var k) ? k : 6,
+    Temperature = double.TryParse(configuration["Assistant:Temperature"], out var t) ? t : 0.2
+};
+
+builder.Services.AddSingleton(openAiOptions);
+builder.Services.AddSingleton(assistantOptions);
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton(sp =>
+{
+    var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+    return new EmbeddingsService(http, openAiOptions);
+});
+builder.Services.AddSingleton(sp => new VectorStore(connectionString));
+builder.Services.AddScoped(sp =>
+{
+    var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
+    return new Orchestrator(
+        sp.GetServices<IAssistantTool>(),
+        sp.GetRequiredService<EmbeddingsService>(),
+        sp.GetRequiredService<VectorStore>(),
+        openAiOptions,
+        assistantOptions,
+        http);
+});
+
+// Tools
+builder.Services.AddScoped<IAssistantTool, TasksTool>();
+builder.Services.AddScoped<IAssistantTool, BillsTool>();
+builder.Services.AddScoped<IAssistantTool, DocumentsTool>();
+builder.Services.AddScoped<IAssistantTool, FinanceTool>();
+builder.Services.AddScoped<IAssistantTool, SearchTool>();
 
 var app = builder.Build();
 

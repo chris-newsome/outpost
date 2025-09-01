@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BCrypt.Net;
+using BC = BCrypt.Net.BCrypt;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -56,8 +56,8 @@ public sealed class AuthService : IAuthService
         return Task.FromResult(new AuthTokens(access, newRefresh, DateTimeOffset.UtcNow.AddMinutes(15)));
     }
 
-    public string HashPassword(string password) => BCrypt.HashPassword(password);
-    public bool VerifyPassword(string password, string passwordHash) => BCrypt.Verify(password, passwordHash);
+    public string HashPassword(string password) => BC.HashPassword(password);
+    public bool VerifyPassword(string password, string passwordHash) => BC.Verify(password, passwordHash);
 
     public string GenerateAccessToken(IEnumerable<Claim> claims, TimeSpan lifetime)
     {
@@ -75,4 +75,3 @@ public sealed class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
 }
-
