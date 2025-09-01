@@ -1,4 +1,4 @@
--- Supabase Postgres schema for Famlio
+-- Supabase Postgres schema for Outpost
 -- Extensions
 create extension if not exists pgcrypto;
 
@@ -169,4 +169,3 @@ create policy "finance_accounts_all" on public.finance_accounts
 -- Storage bucket (run on Supabase; may require elevated role)
 -- insert into storage.buckets (id, name, public) values ('documents','documents', false)
 -- on conflict (id) do nothing;
-

@@ -12,7 +12,7 @@ services:
   # Hot-reload frontend (SvelteKit dev server) binding local files.
   web-dev:
     image: node:20
-    container_name: famlio-web-dev
+    container_name: outpost-web-dev
     working_dir: /workspace/frontend
     command: bash -lc "npm install && npm run dev -- --host 0.0.0.0"
     environment:
@@ -27,4 +27,3 @@ services:
       - "5173:5173"
     depends_on:
       - api
-

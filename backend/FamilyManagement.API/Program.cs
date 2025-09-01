@@ -20,7 +20,7 @@ var configuration = builder.Configuration;
 // Add DbContext (placeholder: use PostgreSQL via Supabase connection string)
 var connectionString = configuration.GetConnectionString("Default")
     ?? Environment.GetEnvironmentVariable("SUPABASE_DB_CONNECTION")
-    ?? "Host=localhost;Database=famlio;Username=postgres;Password=postgres";
+    ?? "Host=localhost;Database=outpost;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -111,4 +111,3 @@ app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
-

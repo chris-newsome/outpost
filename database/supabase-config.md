@@ -1,4 +1,4 @@
-Supabase configuration for Famlio
+Supabase configuration for Outpost
 
 Auth
 - Enable Email/Password in Authentication → Providers.
@@ -34,4 +34,3 @@ Notes
 - Prefer Supabase Auth for identity. The backend validates JWTs (Supabase scheme) and authorizes per family membership.
 - Supabase Storage signed URLs are recommended for document access.
 - Use RLS to enforce per-family data access (done in SQL).
-

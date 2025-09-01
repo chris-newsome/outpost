@@ -28,9 +28,9 @@ This ships basic modules for Tasks, Bills, Documents (via Supabase Storage), and
 - Using local Postgres (example via Docker):
 
   ```bash
-  docker run --name famlio-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=famlio -p 5432:5432 -d postgres:15
+  docker run --name outpost-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=outpost -p 5432:5432 -d postgres:15
   # After Postgres starts, apply schema:
-  psql postgresql://postgres:postgres@localhost:5432/famlio -f database/migrations.sql
+  psql postgresql://postgres:postgres@localhost:5432/outpost -f database/migrations.sql
   ```
 
 - Using Supabase:
@@ -44,7 +44,7 @@ Backend (ASP.NET Core):
 
 - `ASPNETCORE_URLS`: recommended `http://localhost:5000` for local dev
 - `SUPABASE_DB_CONNECTION`: Postgres connection string
-  - Example: `Host=localhost;Database=famlio;Username=postgres;Password=postgres`
+  - Example: `Host=localhost;Database=outpost;Username=postgres;Password=postgres`
 - `BACKEND_JWT_SECRET`: HMAC secret for access tokens (use a long random string)
 - Optional JWT validation for Supabase tokens:
   - `SUPABASE_JWT_ISSUER`
@@ -64,7 +64,7 @@ VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 ```bash
 # from repo root
 export ASPNETCORE_URLS=http://localhost:5000
-export SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres"
+export SUPABASE_DB_CONNECTION="Host=localhost;Database=outpost;Username=postgres;Password=postgres"
 export BACKEND_JWT_SECRET="change-me-very-long-random"
 
 dotnet restore backend/FamilyManagement.API/FamilyManagement.API.csproj
@@ -92,7 +92,7 @@ docker compose up --build
 
 - Frontend: http://localhost:5173
 - API: http://localhost:5000 (health at /health)
-- Postgres: localhost:5432 (db: famlio / postgres:postgres)
+- Postgres: localhost:5432 (db: outpost / postgres:postgres)
 
 Environment overrides:
 
@@ -106,19 +106,19 @@ Build and run production images:
 Backend (ASP.NET Core):
 
 ```bash
-docker build -t famlio-api:prod -f backend/Dockerfile .
+docker build -t outpost-api:prod -f backend/Dockerfile .
 docker run -p 8080:8080 \
   -e ASPNETCORE_URLS=http://0.0.0.0:8080 \
-  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=outpost;Username=postgres;Password=postgres" \
   -e BACKEND_JWT_SECRET="change-me-very-long-random" \
-  famlio-api:prod
+  outpost-api:prod
 ```
 
 Frontend (Nginx static):
 
 ```bash
-docker build -t famlio-web:prod -f frontend/Dockerfile .
-docker run -p 8081:80 famlio-web:prod
+docker build -t outpost-web:prod -f frontend/Dockerfile .
+docker run -p 8081:80 outpost-web:prod
 ```
 
 Notes:
@@ -137,7 +137,7 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 - Frontend (Nginx): http://localhost:8081
 - API: http://localhost:8080 (health at `/health`)
-- DB: localhost:5432 (db `famlio`, user `postgres`, password `postgres`)
+- DB: localhost:5432 (db `outpost`, user `postgres`, password `postgres`)
 
 Notes:
 
@@ -167,8 +167,8 @@ Use this when deploying on a single host (e.g., a VM) where the API runs locally
 cd frontend
 npm ci
 npm run build
-sudo mkdir -p /var/www/famlio
-sudo rsync -a --delete build/ /var/www/famlio/
+sudo mkdir -p /var/www/outpost
+sudo rsync -a --delete build/ /var/www/outpost/
 ```
 
 2) Run the API on localhost:8080
@@ -176,13 +176,13 @@ sudo rsync -a --delete build/ /var/www/famlio/
 - Option A: Use the production Docker image
 
 ```bash
-docker build -t famlio-api:prod -f backend/Dockerfile .
-docker run -d --name famlio-api \
+docker build -t outpost-api:prod -f backend/Dockerfile .
+docker run -d --name outpost-api \
   -p 8080:8080 \
   -e ASPNETCORE_URLS=http://0.0.0.0:8080 \
-  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+  -e SUPABASE_DB_CONNECTION="Host=localhost;Database=outpost;Username=postgres;Password=postgres" \
   -e BACKEND_JWT_SECRET="change-me-very-long-random" \
-  famlio-api:prod
+  outpost-api:prod
 ```
 
 - Option B: Run the published binary directly (ensure .NET runtime installed)
@@ -190,7 +190,7 @@ docker run -d --name famlio-api \
 ```bash
 dotnet publish backend/FamilyManagement.API/FamilyManagement.API.csproj -c Release -o out
 ASPNETCORE_URLS=http://0.0.0.0:8080 \
-SUPABASE_DB_CONNECTION="Host=localhost;Database=famlio;Username=postgres;Password=postgres" \
+SUPABASE_DB_CONNECTION="Host=localhost;Database=outpost;Username=postgres;Password=postgres" \
 BACKEND_JWT_SECRET="change-me-very-long-random" \
 dotnet out/FamilyManagement.API.dll
 ```
@@ -198,10 +198,10 @@ dotnet out/FamilyManagement.API.dll
 3) Install Nginx site
 
 ```bash
-sudo cp deploy/nginx.single-domain.conf /etc/nginx/sites-available/famlio.conf
-sudo sed -i "s/example.com/your-domain.com/g" /etc/nginx/sites-available/famlio.conf
+sudo cp deploy/nginx.single-domain.conf /etc/nginx/sites-available/outpost.conf
+sudo sed -i "s/example.com/your-domain.com/g" /etc/nginx/sites-available/outpost.conf
 sudo nginx -t
-sudo ln -sf /etc/nginx/sites-available/famlio.conf /etc/nginx/sites-enabled/famlio.conf
+sudo ln -sf /etc/nginx/sites-available/outpost.conf /etc/nginx/sites-enabled/outpost.conf
 sudo systemctl reload nginx
 ```
 
@@ -214,9 +214,51 @@ sudo certbot --nginx -d your-domain.com
 
 Notes:
 
-- The Nginx config proxies `/api/*` and `/hubs/*` to the API at `http://127.0.0.1:8080` and serves the static site from `/var/www/famlio`.
+- The Nginx config proxies `/api/*` and `/hubs/*` to the API at `http://127.0.0.1:8080` and serves the static site from `/var/www/outpost`.
 - `client_max_body_size 20m` matches the backend documents upload limit.
 - Since the app is served from a single domain, CORS is not required.
+
+## systemd Service (API)
+
+Install the API as a systemd service so it starts on boot and restarts on failure.
+
+1) Publish and deploy the API
+
+```bash
+dotnet publish backend/FamilyManagement.API/FamilyManagement.API.csproj -c Release -o out
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin outpost || true
+sudo mkdir -p /opt/outpost/api
+sudo rsync -a --delete out/ /opt/outpost/api/
+sudo chown -R outpost:outpost /opt/outpost
+```
+
+2) Configure environment
+
+```bash
+sudo cp deploy/outpost-api.env.example /etc/outpost-api.env
+sudo chmod 600 /etc/outpost-api.env
+sudo editor /etc/outpost-api.env
+```
+
+3) Install and enable the service
+
+```bash
+sudo cp deploy/outpost-api.service /etc/systemd/system/outpost-api.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now outpost-api
+```
+
+4) Verify logs and status
+
+```bash
+systemctl status outpost-api
+journalctl -u outpost-api -f
+```
+
+Notes:
+
+- The service runs as the `outpost` user in `/opt/outpost/api` and reads environment variables from `/etc/outpost-api.env`.
+- Update the unit file if your deployment paths differ.
 
 ## API Overview (quick)
 

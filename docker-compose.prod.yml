@@ -3,9 +3,9 @@ version: "3.9"
 services:
   db:
     image: postgres:15
-    container_name: famlio-db-prod
+    container_name: outpost-db-prod
     environment:
-      POSTGRES_DB: famlio
+      POSTGRES_DB: outpost
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -13,7 +13,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d famlio"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d outpost"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,10 +22,10 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: famlio-api-prod
+    container_name: outpost-api-prod
     environment:
       ASPNETCORE_URLS: http://0.0.0.0:8080
-      SUPABASE_DB_CONNECTION: Host=db;Database=famlio;Username=postgres;Password=postgres
+      SUPABASE_DB_CONNECTION: Host=db;Database=outpost;Username=postgres;Password=postgres
       BACKEND_JWT_SECRET: change-me-very-long-random
       # Allow the frontend origin if you bypass Nginx proxying
       Cors__AllowedOrigins: http://localhost:8081
@@ -45,7 +45,7 @@ services:
         # Optionally set Supabase if used in prod
         # VITE_SUPABASE_URL: "https://YOUR-PROJECT.supabase.co"
         # VITE_SUPABASE_ANON_KEY: "YOUR_ANON_KEY"
-    container_name: famlio-web-prod
+    container_name: outpost-web-prod
     ports:
       - "8081:80"
     depends_on:
@@ -53,4 +53,3 @@ services:
 
 volumes:
   db-data:
-

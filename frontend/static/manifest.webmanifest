@@ -1,6 +1,6 @@
 {
-  "name": "Famlio",
-  "short_name": "Famlio",
+  "name": "Outpost",
+  "short_name": "Outpost",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -10,4 +10,3 @@
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
-

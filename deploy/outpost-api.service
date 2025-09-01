@@ -1,0 +1,27 @@
+[Unit]
+Description=Outpost API (.NET 8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/outpost/api
+ExecStart=/usr/bin/dotnet FamilyManagement.API.dll
+Restart=always
+RestartSec=5
+# Set a dedicated user/group on the host (create beforehand)
+User=outpost
+Group=outpost
+Environment=DOTNET_ENVIRONMENT=Production
+EnvironmentFile=/etc/outpost-api.env
+
+# Suggested hardening (uncomment and adjust as needed)
+# NoNewPrivileges=true
+# ProtectSystem=full
+# ProtectHome=true
+# PrivateTmp=true
+# CapabilityBoundingSet=
+# LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

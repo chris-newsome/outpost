@@ -1,7 +1,7 @@
 /// <reference lib="WebWorker" />
 
 // Basic offline caching and background sync queue for write operations
-const CACHE_NAME = 'famlio-cache-v1';
+const CACHE_NAME = 'outpost-cache-v1';
 const OFFLINE_URLS: string[] = [
   '/',
   '/manifest.webmanifest',
@@ -10,7 +10,7 @@ const OFFLINE_URLS: string[] = [
 ];
 
 // IndexedDB utilities for queue
-const DB_NAME = 'famlio-queue';
+const DB_NAME = 'outpost-queue';
 const STORE_NAME = 'requests';
 
 function openDb(): Promise<IDBDatabase> {
@@ -93,7 +93,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
           body
         });
         try {
-          await (self as any).registration.sync.register('famlio-sync');
+          await (self as any).registration.sync.register('outpost-sync');
         } catch {}
         return new Response(null, { status: 202, statusText: 'Queued for sync' });
       })
@@ -106,13 +106,13 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
   if (type === 'QUEUE_REQUEST') {
     const { id, url, method, headers, body } = payload;
     addToQueue({ id, url, method, headers: Object.entries(headers), body: JSON.stringify(body) }).then(async () => {
-      try { await (self as any).registration.sync.register('famlio-sync'); } catch {}
+      try { await (self as any).registration.sync.register('outpost-sync'); } catch {}
     });
   }
 });
 
 self.addEventListener('sync', (event: any) => {
-  if (event.tag === 'famlio-sync') {
+  if (event.tag === 'outpost-sync') {
     event.waitUntil(replayQueue());
   }
 });
@@ -137,4 +137,3 @@ async function replayQueue(): Promise<void> {
 }
 
 export {};
-

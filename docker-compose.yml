@@ -3,9 +3,9 @@ version: "3.9"
 services:
   db:
     image: postgres:15
-    container_name: famlio-db
+    container_name: outpost-db
     environment:
-      POSTGRES_DB: famlio
+      POSTGRES_DB: outpost
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -13,19 +13,19 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d famlio"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d outpost"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   api:
     image: mcr.microsoft.com/dotnet/sdk:8.0
-    container_name: famlio-api
+    container_name: outpost-api
     working_dir: /workspace
     command: bash -lc "dotnet restore backend/FamilyManagement.API/FamilyManagement.API.csproj && DOTNET_ENVIRONMENT=Development dotnet watch --project backend/FamilyManagement.API/FamilyManagement.API.csproj run"
     environment:
       ASPNETCORE_URLS: http://0.0.0.0:5000
-      SUPABASE_DB_CONNECTION: Host=db;Database=famlio;Username=postgres;Password=postgres
+      SUPABASE_DB_CONNECTION: Host=db;Database=outpost;Username=postgres;Password=postgres
       BACKEND_JWT_SECRET: change-me-very-long-random
     volumes:
       - ./:/workspace
@@ -37,7 +37,7 @@ services:
 
   web:
     image: node:20
-    container_name: famlio-web
+    container_name: outpost-web
     working_dir: /workspace/frontend
     command: bash -lc "npm install && npm run dev -- --host 0.0.0.0"
     environment:
@@ -55,4 +55,3 @@ services:
 
 volumes:
   db-data:
-
