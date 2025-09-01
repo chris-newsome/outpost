@@ -390,6 +390,73 @@ Fluent Bit forwards:
 - systemd journal units: `outpost-api-docker.service`, `outpost-web-docker.service` → log group `/outpost/systemd`
 - Docker container logs → log group `/outpost/docker`
 
+### CloudWatch Alarms (AWS CLI)
+
+Create simple alarms driven by log patterns from the healthcheck script. Requires that logs are flowing to CloudWatch via Fluent Bit and that your CLI has permissions.
+
+1) Create an SNS topic for notifications
+
+```bash
+TOPIC_ARN=$(aws sns create-topic --name outpost-alerts --query TopicArn --output text)
+# Subscribe an email (confirm the email you receive)
+aws sns subscribe --topic-arn "$TOPIC_ARN" --protocol email --notification-endpoint you@example.com
+```
+
+2) Create metric filters on the systemd log group
+
+```bash
+LOG_GROUP="/outpost/systemd"
+
+# API unhealthy filter → Outpost/ApiUnhealthy metric
+aws logs put-metric-filter \
+  --log-group-name "$LOG_GROUP" \
+  --filter-name outpost-api-unhealthy \
+  --filter-pattern '"outpost-healthcheck] API unhealthy"' \
+  --metric-transformations \
+      metricName=ApiUnhealthy,metricNamespace=Outpost,metricValue=1,defaultValue=0
+
+# Web unhealthy filter → Outpost/WebUnhealthy metric
+aws logs put-metric-filter \
+  --log-group-name "$LOG_GROUP" \
+  --filter-name outpost-web-unhealthy \
+  --filter-pattern '"outpost-healthcheck] Web unhealthy"' \
+  --metric-transformations \
+      metricName=WebUnhealthy,metricNamespace=Outpost,metricValue=1,defaultValue=0
+```
+
+3) Create alarms on those metrics
+
+```bash
+aws cloudwatch put-metric-alarm \
+  --alarm-name Outpost-API-Unhealthy \
+  --namespace Outpost \
+  --metric-name ApiUnhealthy \
+  --statistic Sum \
+  --period 60 \
+  --evaluation-periods 1 \
+  --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --treat-missing-data notBreaching \
+  --alarm-actions "$TOPIC_ARN"
+
+aws cloudwatch put-metric-alarm \
+  --alarm-name Outpost-Web-Unhealthy \
+  --namespace Outpost \
+  --metric-name WebUnhealthy \
+  --statistic Sum \
+  --period 60 \
+  --evaluation-periods 1 \
+  --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --treat-missing-data notBreaching \
+  --alarm-actions "$TOPIC_ARN"
+```
+
+Notes:
+
+- The health timer logs lines containing `outpost-healthcheck] API unhealthy` and `outpost-healthcheck] Web unhealthy` when checks fail. Metric filters count those events.
+- To scope alarms per host, add `--dimensions Name=Host,Value=$(hostname)` in both the metric transformation (using extraction) and the alarm; omitted here for simplicity.
+
 ### Simple Webhook Alerts on Failures
 
 Use systemd `OnFailure` to send a Slack (or generic) webhook when a unit fails.
